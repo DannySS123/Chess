@@ -1,7 +1,8 @@
 package com.main
 
 import pieces.Piece
+import pieces.PieceColor
 
-class Tile(val  piece: Piece, val selected: Boolean ) {
+class Tile(var  piece: Piece?, var selected: Boolean ) {
 
 }
