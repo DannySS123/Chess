@@ -2,7 +2,6 @@ package com.main
 
 import javafx.animation.AnimationTimer
 import javafx.application.Application
-import javafx.collections.FXCollections
 import javafx.event.EventHandler
 import javafx.scene.Group
 import javafx.scene.Scene
@@ -10,7 +9,7 @@ import javafx.scene.canvas.Canvas
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.control.Alert
 import javafx.scene.control.Alert.AlertType
-import javafx.scene.control.ComboBox
+import javafx.scene.control.Button
 import javafx.scene.image.Image
 import javafx.scene.input.KeyCode
 import javafx.scene.input.MouseEvent
@@ -84,6 +83,31 @@ class Game : Application() {
         comboBox.translateX = 750.0
         //root.children.add(comboBox)
         //-------------------------------------*/
+        val restartButton = Button("Restart")
+        restartButton.translateX = 725.0
+        restartButton.translateY = 90.0
+        restartButton.addEventHandler(MouseEvent.MOUSE_CLICKED) {
+            createStarterSetup()
+        }
+
+        val saveButton = Button("Save")
+        saveButton.translateX = 725.0
+        saveButton.translateY = 30.0
+        saveButton.addEventHandler(MouseEvent.MOUSE_CLICKED) {
+            TODO()
+        }
+
+        val loadButton = Button("Load")
+        loadButton.translateX = 725.0
+        loadButton.translateY = 60.0
+        loadButton.addEventHandler(MouseEvent.MOUSE_CLICKED) {
+            TODO()
+        }
+
+        root.children.add(restartButton)
+        root.children.add(saveButton)
+        root.children.add(loadButton)
+
 
         prepareActionHandlers()
 
@@ -149,7 +173,7 @@ class Game : Application() {
         if (changeTurn) {
             if (newPos!!.y == 0 && from.piece!!.color == PieceColor.WHITE && from.piece!!.name == "Pawn") {
                 to.piece = Queen(PieceColor.WHITE, Position(newPos.x, 0), Image(getResource("/whiteQueen.png")))
-            } else if (newPos!!.y == 7 && from.piece!!.color == PieceColor.BLACK && from.piece!!.name == "Pawn") {
+            } else if (newPos.y == 7 && from.piece!!.color == PieceColor.BLACK && from.piece!!.name == "Pawn") {
                 to.piece = Queen(PieceColor.BLACK, Position(newPos.x, 7), Image(getResource("/blackQueen.png")))
             }
         }
@@ -270,10 +294,21 @@ class Game : Application() {
 
     }
 
+    private fun clearTiles() {
+        for (y in 0 until 8) {
+            for (x in 0 until 8) {
+                tiles[y][x].piece = null
+                tiles[y][x].image.fill = null
+            }
+        }
+    }
+
     @Throws(IOException::class)
     fun createStarterSetup() {
         endOfGame = false
         actionHappened = true
+        turnColor = PieceColor.WHITE
+        clearTiles()
         tiles[0][7].piece = Rook(PieceColor.BLACK, Position(7, 0), Image(getResource("/blackRook.png")))
         tiles[0][0].piece = Rook(PieceColor.BLACK, Position(0, 0), Image(getResource("/blackRook.png")))
         tiles[7][0].piece = Rook(PieceColor.WHITE, Position(0, 7), Image(getResource("/whiteRook.png")))
