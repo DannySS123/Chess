@@ -13,15 +13,16 @@ abstract class Piece(val name: String, val color: PieceColor, var position: Posi
 
 
     companion object {
-        lateinit var game: Game
+        private lateinit var game: Game
 
         fun setTheGame(g: Game) {
             this.game = g
         }
 
         fun isGoodStep(fromTile: Tile, toTile: Tile, tiles: Array<Array<Tile>>, turnColor: PieceColor): Boolean  {
-            var res: Boolean = false
+            var res = false
             val toPiece = toTile.piece
+            val toFill = toTile.image.fill
 
             game.step(fromTile, toTile, false)
             if (!isCheck(tiles, turnColor)) {
@@ -29,6 +30,7 @@ abstract class Piece(val name: String, val color: PieceColor, var position: Posi
             }
             game.step(toTile, fromTile, false)
             toTile.piece = toPiece
+            toTile.image.fill = toFill
             return res
         }
 
