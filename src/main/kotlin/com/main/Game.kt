@@ -16,9 +16,13 @@ import javafx.scene.input.MouseEvent
 import javafx.scene.paint.Color
 import javafx.scene.paint.ImagePattern
 import javafx.scene.shape.Rectangle
+import javafx.stage.FileChooser
 import javafx.stage.Stage
 import pieces.*
+import java.io.File
+import java.io.FileReader
 import java.io.IOException
+import java.io.PrintWriter
 
 
 class Game : Application() {
@@ -94,15 +98,61 @@ class Game : Application() {
         saveButton.translateX = 725.0
         saveButton.translateY = 30.0
         saveButton.addEventHandler(MouseEvent.MOUSE_CLICKED) {
-            TODO()
+            //Creating a File chooser
+            val fileChooser = FileChooser()
+            fileChooser.title = "Save"
+            fileChooser.extensionFilters.addAll(FileChooser.ExtensionFilter("All Files", "*.*"))
+            val file: File? = fileChooser.showSaveDialog(mainStage)
+            if (file != null) {
+                val pw = PrintWriter(file)
+                pw.println(if(turnColor == PieceColor.WHITE) "white" else "black")
+                tiles.forEach { tiles -> tiles.forEach { tile ->
+                    if (tile.piece != null) {
+                        pw.println(tile.toString())
+                    }
+                }}
+                pw.flush()
+            }
+
         }
 
         val loadButton = Button("Load")
         loadButton.translateX = 725.0
         loadButton.translateY = 60.0
         loadButton.addEventHandler(MouseEvent.MOUSE_CLICKED) {
-            TODO()
+            //Creating a File chooser
+            val fileChooser = FileChooser()
+            fileChooser.title = "Load"
+            fileChooser.extensionFilters.addAll(FileChooser.ExtensionFilter("All Files", "*.*"))
+            val file: File? = fileChooser.showOpenDialog(mainStage)
+            if (file != null) {
+                clearTiles()
+                val fileReader = FileReader(file)
+                fileReader.readLines().forEach { line ->
+                    val input = line.split(" ")
+                    var x = 0
+                    var y = 0
+                    var c: PieceColor = PieceColor.WHITE
+                    if (input.size > 1) {
+                        y = input[3].toInt()
+                        x = input[2].toInt()
+                        c = if (input[1] == "WHITE") PieceColor.WHITE else PieceColor.BLACK
+                    }
+                    when(input[0]) {
+                        "white" -> turnColor = PieceColor.WHITE
+                        "black" -> turnColor = PieceColor.BLACK
+                        "King" -> tiles[y][x].piece = King(c, Position(x, y), Image(getResource("/${input[1].lowercase()}King.png")))
+                        "Queen" -> tiles[y][x].piece = Queen(c, Position(x, y), Image(getResource("/${input[1].lowercase()}Queen.png")))
+                        "Knight" -> tiles[y][x].piece = Knight(c, Position(x, y), Image(getResource("/${input[1].lowercase()}Knight.png")))
+                        "Rook" -> tiles[y][x].piece = Rook(c, Position(x, y), Image(getResource("/${input[1].lowercase()}Rook.png")))
+                        "Bishop" -> tiles[y][x].piece = Bishop(c, Position(x, y), Image(getResource("/${input[1].lowercase()}Bishop.png")))
+                        "Pawn" -> tiles[y][x].piece = Pawn(c, Position(x, y), Image(getResource("/${input[1].lowercase()}Pawn.png")))
+                    }
+                }
+                actionHappened = true
+            }
         }
+
 
         root.children.add(restartButton)
         root.children.add(saveButton)
@@ -274,12 +324,13 @@ class Game : Application() {
                 }
             }
 
-            if (check && allPm.size == 0 && !endOfGame) {
+            if (allPm.size == 0 && !endOfGame) {
                 endOfGame = true
                 val alert = Alert(AlertType.INFORMATION)
                 alert.title = "End of the game!"
                 alert.headerText = null
-                alert.contentText = "Congrats!\n" + (if (turnColor == PieceColor.BLACK) "WHITE" else "BLACK") + " is the winner!"
+                alert.contentText = (if (check) "Congrats!\n" + (if (turnColor == PieceColor.BLACK) "WHITE" else "BLACK") + " is the winner!" else "Stalemate!")
+                check = false
                 alert.setOnHidden { alert.close() }
                 alert.show()
             }
@@ -317,10 +368,10 @@ class Game : Application() {
         tiles[0][5].piece = Bishop(PieceColor.BLACK, Position(5, 0), Image(getResource("/blackBishop.png")))
         tiles[7][2].piece = Bishop(PieceColor.WHITE, Position(2, 7), Image(getResource("/whiteBishop.png")))
         tiles[7][5].piece = Bishop(PieceColor.WHITE, Position(5, 7), Image(getResource("/whiteBishop.png")))
-        tiles[0][1].piece = Knight(PieceColor.BLACK, Position(1, 0), Image(getResource("/blackHorse.png")))
-        tiles[0][6].piece = Knight(PieceColor.BLACK, Position(6, 0), Image(getResource("/blackHorse.png")))
-        tiles[7][1].piece = Knight(PieceColor.WHITE, Position(1, 7), Image(getResource("/whiteHorse.png")))
-        tiles[7][6].piece = Knight(PieceColor.WHITE, Position(6, 7), Image(getResource("/whiteHorse.png")))
+        tiles[0][1].piece = Knight(PieceColor.BLACK, Position(1, 0), Image(getResource("/blackKnight.png")))
+        tiles[0][6].piece = Knight(PieceColor.BLACK, Position(6, 0), Image(getResource("/blackKnight.png")))
+        tiles[7][1].piece = Knight(PieceColor.WHITE, Position(1, 7), Image(getResource("/whiteKnight.png")))
+        tiles[7][6].piece = Knight(PieceColor.WHITE, Position(6, 7), Image(getResource("/whiteKnight.png")))
         tiles[0][4].piece = King(PieceColor.BLACK, Position(4, 0), Image(getResource("/blackKing.png")))
         tiles[7][4].piece = King(PieceColor.WHITE, Position(4, 7), Image(getResource("/whiteKing.png")))
         tiles[0][3].piece = Queen(PieceColor.BLACK, Position(3, 0), Image(getResource("/blackQueen.png")))

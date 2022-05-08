@@ -11,7 +11,6 @@ abstract class Piece(val name: String, val color: PieceColor, var position: Posi
         return if (t.piece == null) false else t.piece!!.color == this.color
     }
 
-
     companion object {
         private lateinit var game: Game
 
@@ -20,14 +19,10 @@ abstract class Piece(val name: String, val color: PieceColor, var position: Posi
         }
 
         fun isGoodStep(fromTile: Tile, toTile: Tile, tiles: Array<Array<Tile>>, turnColor: PieceColor): Boolean  {
-            var res = false
             val toPiece = toTile.piece
             val toFill = toTile.image.fill
-
             game.step(fromTile, toTile, false)
-            if (!isCheck(tiles, turnColor)) {
-                res = true
-            }
+            val res = !isCheck(tiles, turnColor)
             game.step(toTile, fromTile, false)
             toTile.piece = toPiece
             toTile.image.fill = toFill
@@ -85,16 +80,10 @@ abstract class Piece(val name: String, val color: PieceColor, var position: Posi
                 while (cY + j in 0..7 && cX + i in 0..7) {
                     val piece: Piece? = tiles[cY + j][cX + i].piece
                     if (piece != null) {
-                        if (piece.color == king.color) {
-                            break
-                        }
+                        if (piece.color == king.color) break
                         val name: String = piece.name
                         if (king.color != piece.color) {
-                            if (name == "Queen" || name == "Rook") {
-                                return true
-                            } else {
-                                break
-                            }
+                            if (name == "Queen" || name == "Rook") return true else break
                         }
                     }
                     i += di
@@ -111,19 +100,13 @@ abstract class Piece(val name: String, val color: PieceColor, var position: Posi
                     0 -> { di = -1; i = -1 }
                     1 -> { dj = -1; j = -1 }
                 }
-                while (cY + j in 0..7 && cX + i < 8 && cX + i >= 0) {
+                while (cY + j in 0..7 && cX + i in 0..7) {
                     val piece: Piece? = tiles[cY + j][cX + i].piece
                     if (piece != null) {
-                        if (piece.color == king.color) {
-                            break
-                        }
+                        if (piece.color == king.color) break
                         val name: String = piece.name
                         if (king.color != piece.color) {
-                            if (name == "Queen" || name == "Bishop") {
-                                return true
-                            } else {
-                                break
-                            }
+                            if (name == "Queen" || name == "Bishop") return true else break
                         }
                     }
                     i += di
@@ -152,7 +135,7 @@ abstract class Piece(val name: String, val color: PieceColor, var position: Posi
             }
             for (i in -1..1) {
                 for (j in -1..1) {
-                    if (cX + i in 0..7 && cY + j < 8 && cY + j >= 0 && (j != 0 || i != 0)) {
+                    if (cX + i in 0..7 && cY + j in 0..7 && (j != 0 || i != 0)) {
                         val piece: Piece? = tiles[cY + j][cX + i].piece
                         if (piece != null && piece.color != king.color && piece.name == "King") {
                             return true
