@@ -11,7 +11,6 @@ import javafx.scene.control.Alert
 import javafx.scene.control.Alert.AlertType
 import javafx.scene.control.Button
 import javafx.scene.image.Image
-import javafx.scene.input.KeyCode
 import javafx.scene.input.MouseEvent
 import javafx.scene.paint.Color
 import javafx.scene.paint.ImagePattern
@@ -21,28 +20,22 @@ import javafx.stage.Stage
 import pieces.*
 import java.io.File
 import java.io.FileReader
-import java.io.IOException
 import java.io.PrintWriter
-
 
 class Game : Application() {
 
     companion object {
         private const val WIDTH = 800
         private const val HEIGHT = 720
+        private const val size: Double = (WIDTH.toDouble() - 80) / 8
     }
 
     private lateinit var mainScene: Scene
     private lateinit var gc: GraphicsContext
 
-
     private var lastFrameTime: Long = System.nanoTime()
 
-    // use a set so duplicates are not possible
-    private val currentlyActiveKeys = mutableSetOf<KeyCode>()
-
     private val tiles: Array<Array<Tile>> = Array(8) { Array(8) { Tile(null, false, Rectangle(), Rectangle())} }
-
     private var turnColor = PieceColor.WHITE
     private var selectedTile: Tile? = null
     private var check: Boolean = false
@@ -51,25 +44,24 @@ class Game : Application() {
 
     override fun start(mainStage: Stage) {
         mainStage.title = "Chess"
-
+        //mainStage.isResizable = false
         Piece.setTheGame(this)
         createStarterSetup()
 
         val root = Group()
         mainScene = Scene(root)
         mainStage.scene = mainScene
-
         val canvas = Canvas(WIDTH.toDouble(), HEIGHT.toDouble())
         root.children.add(canvas)
+        gc = canvas.graphicsContext2D
 
-        for (y in 0 until 8) {
-            for (x in 0 until 8) {
-                val tile = tiles[x][y]
-                addEventHandler(tile)
-                root.children.add(tile.background)
-                root.children.add(tile.image)
-            }
+        iterateTiles {
+            addEventHandler(it)
+            root.children.add(it.background)
+            root.children.add(it.image)
         }
+
+        addButtons(root, mainStage)
 
         /*-------------------------------------
         val alert = Alert(AlertType.INFORMATION)
@@ -87,6 +79,26 @@ class Game : Application() {
         comboBox.translateX = 750.0
         //root.children.add(comboBox)
         //-------------------------------------*/
+
+        // Main loop
+        object : AnimationTimer() {
+            override fun handle(currentNanoTime: Long) {
+                tickAndRender(currentNanoTime)
+            }
+        }.start()
+
+        mainStage.show()
+    }
+
+    private fun iterateTiles(func: (t: Tile) -> Unit) {
+        for (y in 0 until 8) {
+            for (x in 0 until 8) {
+                func(tiles[y][x])
+            }
+        }
+    }
+
+    private fun addButtons(root: Group, mainStage: Stage) {
         val restartButton = Button("Restart")
         restartButton.translateX = 725.0
         restartButton.translateY = 90.0
@@ -113,7 +125,6 @@ class Game : Application() {
                 }}
                 pw.flush()
             }
-
         }
 
         val loadButton = Button("Load")
@@ -153,45 +164,23 @@ class Game : Application() {
             }
         }
 
-
         root.children.add(restartButton)
         root.children.add(saveButton)
         root.children.add(loadButton)
-
-
-        prepareActionHandlers()
-
-        gc = canvas.graphicsContext2D
-
-        loadGraphics()
-
-        // Main loop
-        object : AnimationTimer() {
-            override fun handle(currentNanoTime: Long) {
-                tickAndRender(currentNanoTime)
-            }
-        }.start()
-
-        mainStage.show()
     }
 
     private fun addEventHandler(tile: Tile) {
-
         val mouseEventHandler: EventHandler<MouseEvent> = EventHandler {
             actionHappened = true
             if (tile.selectedToStep) {
                 step(selectedTile!!, tile, true)
             } else if (!tile.selected) {
+                iterateTiles {
+                    it.selected = false
+                    it.selectedToStep = false
+                }
                 tile.selected = true
                 selectedTile = tile
-                for (a in 0 until 8) {
-                    for (b in 0 until 8) {
-                        if (tile != tiles[a][b]) {
-                            tiles[a][b].selected = false
-                            tiles[a][b].selectedToStep = false
-                        }
-                    }
-                }
             }
         }
         tile.image.addEventHandler(MouseEvent.MOUSE_CLICKED, mouseEventHandler)
@@ -217,15 +206,10 @@ class Game : Application() {
                 }
             }
         }
-
         to.piece = from.piece
 
         if (changeTurn) {
-            if (newPos!!.y == 0 && from.piece!!.color == PieceColor.WHITE && from.piece!!.name == "Pawn") {
-                to.piece = Queen(PieceColor.WHITE, Position(newPos.x, 0), Image(getResource("/whiteQueen.png")))
-            } else if (newPos.y == 7 && from.piece!!.color == PieceColor.BLACK && from.piece!!.name == "Pawn") {
-                to.piece = Queen(PieceColor.BLACK, Position(newPos.x, 7), Image(getResource("/blackQueen.png")))
-            }
+            promotePawn(newPos!!, from, to)
         }
 
         to.piece!!.position = newPos!!
@@ -233,25 +217,18 @@ class Game : Application() {
         from.image.fill = null
         if (changeTurn) {
             turnColor = if (turnColor == PieceColor.WHITE) PieceColor.BLACK else PieceColor.WHITE
-        }
-        if (changeTurn && Piece.isCheck(tiles, turnColor)) {
-            check = true
-        }
-    }
-
-    private fun prepareActionHandlers() {
-        mainScene.onKeyPressed = EventHandler { event ->
-            currentlyActiveKeys.add(event.code)
-        }
-        mainScene.onKeyReleased = EventHandler { event ->
-            currentlyActiveKeys.remove(event.code)
+            if (Piece.isCheck(tiles, turnColor)) {
+                check = true
+            }
         }
     }
 
-    private fun loadGraphics() {
-        // prefixed with / to indicate that the files are
-        // in the root of the "resources" folder
-
+    private fun promotePawn(newPos: Position, from: Tile, to: Tile) {
+        if (newPos.y == 0 && from.piece!!.color == PieceColor.WHITE && from.piece!!.name == "Pawn") {
+            to.piece = Queen(PieceColor.WHITE, Position(newPos.x, 0), Image(getResource("/whiteQueen.png")))
+        } else if (newPos.y == 7 && from.piece!!.color == PieceColor.BLACK && from.piece!!.name == "Pawn") {
+            to.piece = Queen(PieceColor.BLACK, Position(newPos.x, 7), Image(getResource("/blackQueen.png")))
+        }
     }
 
     private fun tickAndRender(currentNanoTime: Long) {
@@ -262,100 +239,81 @@ class Game : Application() {
 
         // clear canvas
         gc.clearRect(0.0, 0.0, WIDTH.toDouble(), HEIGHT.toDouble())
-
-        // draw background
-        //graphicsContext.drawImage(chessBoard, 0.0, 0.0)
-
-        // perform world updates
-        updateSunPosition()
+        displayFPS(elapsedNanos)
 
         if (actionHappened) {
             actionHappened = false
-            val size: Double = (WIDTH.toDouble() - 80) / 8
-            gc.fill = Color.BLACK
-            val pm: MutableList<Position> = mutableListOf()
-            val allPm: MutableList<Position> = mutableListOf()
-            for (y in 0 until 8) {
-                for (x in 0 until 8) {
-                    val tile = tiles[x][y]
-                    if ((x + 1) % 2 == 1 && y % 2 == 1 || x % 2 == 1 && (y + 1) % 2 == 1) {
-                        tile.background.fill = Color.GRAY
-                    } else {
-                        tile.background.fill = Color.LIGHTGRAY
-                    }
-                    if (tile.piece?.color == turnColor) {
-                        if (tile.selected) {
-                            tile.background.fill = Color.GREEN
-                            pm.addAll(tile.piece!!.possibleMoves(tiles, turnColor))
-                        }
-                        allPm.addAll(tile.piece!!.possibleMoves(tiles, turnColor))
-                    }
-
-                    tile.background.x = size * y
-                    tile.background.y = size * x
-                    tile.background.width = size
-                    tile.background.height = size
-
-                    if (check && tile.piece != null && tile.piece!!.name == "King" && tile.piece!!.color == turnColor && !tile.selected) {
-                        tile.background.fill = Color.RED
-                    }
-
-                    //gc.fillRect(size*y, size*x, size, size)
-                    if (tile.piece != null) {
-                        tile.image.x = size * y
-                        tile.image.y = size * x
-                        tile.image.width = size
-                        tile.image.height = size
-                        tile.image.fill = ImagePattern(tile.piece!!.image)
-                    }
-                    //gc.drawImage(tile.piece?.image, size*y, size*x, size, size)
-
-
-                }
-            }
-
-            pm.forEach {
-                val t = tiles[it.y][it.x]
-                t.background.fill = Color.LIGHTGREEN
-                t.selectedToStep = true
-                //println("${it.x}  ${it.y}")
-                if (t.piece != null) {
-                    t.image.fill = ImagePattern(t.piece!!.image)
-                }
-            }
-
-            if (allPm.size == 0 && !endOfGame) {
-                endOfGame = true
-                val alert = Alert(AlertType.INFORMATION)
-                alert.title = "End of the game!"
-                alert.headerText = null
-                alert.contentText = (if (check) "Congrats!\n" + (if (turnColor == PieceColor.BLACK) "WHITE" else "BLACK") + " is the winner!" else "Stalemate!")
-                check = false
-                alert.setOnHidden { alert.close() }
-                alert.show()
-            }
+            updateBoard()
         }
-        /// draw sun
-        //gc.drawImage(sun, sunX.toDouble(), sunY.toDouble(), size, size)
-
-        displayFPS(elapsedNanos)
     }
 
-    private fun updateSunPosition() {
+    private fun updateBoard() {
+        gc.fill = Color.BLACK
+        val pm: MutableList<Position> = mutableListOf()
+        val allPm: MutableList<Position> = mutableListOf()
+        for (y in 0 until 8) {
+            for (x in 0 until 8) {
+                val tile = tiles[x][y]
+                if ((x + 1) % 2 == 1 && y % 2 == 1 || x % 2 == 1 && (y + 1) % 2 == 1) {
+                    tile.background.fill = Color.GRAY
+                } else {
+                    tile.background.fill = Color.LIGHTGRAY
+                }
+                if (tile.piece?.color == turnColor) {
+                    if (tile.selected) {
+                        tile.background.fill = Color.GREEN
+                        pm.addAll(tile.piece!!.possibleMoves(tiles, turnColor))
+                    }
+                    allPm.addAll(tile.piece!!.possibleMoves(tiles, turnColor))
+                }
+                tile.background.x = size * y
+                tile.background.y = size * x
 
+                if (check && tile.piece != null && tile.piece!!.name == "King" && tile.piece!!.color == turnColor && !tile.selected) {
+                    tile.background.fill = Color.RED
+                }
+
+                if (tile.piece != null) {
+                    tile.image.x = size * y
+                    tile.image.y = size * x
+                    tile.image.fill = ImagePattern(tile.piece!!.image)
+                }
+            }
+        }
+
+        pm.forEach {
+            val t = tiles[it.y][it.x]
+            t.background.fill = Color.LIGHTGREEN
+            t.selectedToStep = true
+            if (t.piece != null) {
+                t.image.fill = ImagePattern(t.piece!!.image)
+            }
+        }
+
+        if (allPm.size == 0 && !endOfGame) {
+            endGame()
+        }
+    }
+
+    private fun endGame() {
+        endOfGame = true
+        val alert = Alert(AlertType.INFORMATION)
+        alert.title = "End of the game!"
+        alert.headerText = null
+        alert.contentText = (if (check) "Congrats!\n" + (if (turnColor == PieceColor.BLACK) "WHITE" else "BLACK") + " is the winner!" else "Stalemate!")
+        check = false
+        alert.setOnHidden { alert.close() }
+        alert.show()
     }
 
     private fun clearTiles() {
-        for (y in 0 until 8) {
-            for (x in 0 until 8) {
-                tiles[y][x].piece = null
-                tiles[y][x].image.fill = null
-            }
+        iterateTiles {
+            it.piece = null
+            it.image.fill = null
         }
     }
 
-    @Throws(IOException::class)
-    fun createStarterSetup() {
+    private fun createStarterSetup() {
         endOfGame = false
         actionHappened = true
         turnColor = PieceColor.WHITE
@@ -379,18 +337,21 @@ class Game : Application() {
         for (i in 0..7) {
             tiles[1][i].piece = Pawn(PieceColor.BLACK, Position(i, 1), Image(getResource("/blackPawn.png")))
             tiles[6][i].piece = Pawn(PieceColor.WHITE, Position(i, 6), Image(getResource("/whitePawn.png")))
-
         }
 
+        iterateTiles {
+            it.background.width = size
+            it.background.height = size
+            it.image.width = size
+            it.image.height = size
+        }
     }
 
     private fun displayFPS(elapsedNanos: Long) {
-        // display crude fps counter
         val elapsedMs = elapsedNanos / 1_000_000
         if (elapsedMs != 0L) {
             gc.fill = Color.BLACK
             gc.fillText("${1000 / elapsedMs} fps", WIDTH-50.0, 10.0)
         }
     }
-
 }
