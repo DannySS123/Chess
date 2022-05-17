@@ -10,10 +10,9 @@ class King(color: PieceColor, position: Position, image: Image) : Piece("King", 
         val p: MutableList<Position> = mutableListOf()
         for (i in -1..1) {
             for (j in -1..1) {
-                if (cX + i in 0..7 && cY + j in 0..7 &&  (j != 0 || i != 0) && !isThereSame(tiles[cY + j][cX + i])) {
-                    if (isGoodStep(tiles[cY][cX], tiles[cY + j][cX + i], tiles, turnColor)) {
+                if (isInBoard(cX + i, cY + j) &&  (j != 0 || i != 0) && !isThereSame(tiles[cY + j][cX + i]) &&
+                     isGoodStep(tiles[cY][cX], tiles[cY + j][cX + i], tiles, turnColor)) {
                         p.add(Position(cX + i, cY + j))
-                    }
                 }
             }
         }

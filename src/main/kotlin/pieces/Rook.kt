@@ -20,14 +20,12 @@ class Rook(color: PieceColor, position: Position, image: Image) : Piece("Rook", 
                 0 -> { dj = 1; j = 1 }
                 1 -> { dj = -1; j = -1 }
             }
-            while (cY + j in 0..7 && cX + i in 0..7 && !isThereSame(tiles[cY + j][cX + i])) {
+            while (isInBoard(cX + i, cY + j) && !isThereSame(tiles[cY + j][cX + i])) {
                 val toTile: Tile = tiles[cY + j][cX + i]
                 if (isGoodStep(tiles[cY][cX], toTile, tiles, turnColor)) {
                     p.add(Position(cX + i, cY + j))
                 }
-                if (toTile.piece != null) {
-                    break
-                }
+                if (toTile.piece != null) break
                 i += di
                 j += dj
             }

@@ -18,6 +18,8 @@ abstract class Piece(val name: String, val color: PieceColor, var position: Posi
             this.game = g
         }
 
+        fun isInBoard(i: Int, j: Int): Boolean = (i in 0..7 && j in 0..7)
+
         fun isGoodStep(fromTile: Tile, toTile: Tile, tiles: Array<Array<Tile>>, turnColor: PieceColor): Boolean  {
             val toPiece = toTile.piece
             val toFill = toTile.image.fill
@@ -59,7 +61,7 @@ abstract class Piece(val name: String, val color: PieceColor, var position: Posi
                     6 -> { i = -2; j = 1 }
                     7 -> { i = -2; j = -1 }
                 }
-                if (cY + j in 0..7 && cX + i in 0..7) {
+                if (isInBoard(cX + i, cY + j)) {
                     val piece: Piece? = tiles[cY + j][cX + i].piece
                     if (piece != null && king.color != piece.color && piece.name == "Knight") {
                         return true
@@ -77,7 +79,7 @@ abstract class Piece(val name: String, val color: PieceColor, var position: Posi
                     0 -> { dj = 1; j = 1 }
                     1 -> { dj = -1; j = -1 }
                 }
-                while (cY + j in 0..7 && cX + i in 0..7) {
+                while (isInBoard(cX + i, cY + j)) {
                     val piece: Piece? = tiles[cY + j][cX + i].piece
                     if (piece != null) {
                         if (piece.color == king.color) break
@@ -100,7 +102,7 @@ abstract class Piece(val name: String, val color: PieceColor, var position: Posi
                     0 -> { di = -1; i = -1 }
                     1 -> { dj = -1; j = -1 }
                 }
-                while (cY + j in 0..7 && cX + i in 0..7) {
+                while (isInBoard(cX + i, cY + j)) {
                     val piece: Piece? = tiles[cY + j][cX + i].piece
                     if (piece != null) {
                         if (piece.color == king.color) break
@@ -135,7 +137,7 @@ abstract class Piece(val name: String, val color: PieceColor, var position: Posi
             }
             for (i in -1..1) {
                 for (j in -1..1) {
-                    if (cX + i in 0..7 && cY + j in 0..7 && (j != 0 || i != 0)) {
+                    if (isInBoard(cX + i, cY + j)&& (j != 0 || i != 0)) {
                         val piece: Piece? = tiles[cY + j][cX + i].piece
                         if (piece != null && piece.color != king.color && piece.name == "King") {
                             return true

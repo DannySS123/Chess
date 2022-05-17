@@ -22,10 +22,9 @@ class Knight(color: PieceColor, position: Position, image: Image) : Piece("Knigh
                 6 -> { i = -2; j = 1 }
                 7 -> { i = -2; j = -1 }
             }
-            if (cY + j in 0..7 && cX + i in 0..7 && !isThereSame(tiles[cY + j][cX + i])) {
-                if (isGoodStep(tiles[cY][cX], tiles[cY + j][cX + i], tiles, turnColor)) {
+            if (isInBoard(cX + i, cY + j) && !isThereSame(tiles[cY + j][cX + i]) &&
+                isGoodStep(tiles[cY][cX], tiles[cY + j][cX + i], tiles, turnColor)) {
                     p.add(Position(cX + i, cY + j))
-                }
             }
         }
         return p

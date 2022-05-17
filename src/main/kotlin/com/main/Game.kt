@@ -44,7 +44,6 @@ class Game : Application() {
 
     override fun start(mainStage: Stage) {
         mainStage.title = "Chess"
-        //mainStage.isResizable = false
         Piece.setTheGame(this)
         createStarterSetup()
 
@@ -55,47 +54,19 @@ class Game : Application() {
         root.children.add(canvas)
         gc = canvas.graphicsContext2D
 
-        iterateTiles {
+        tiles.flatten().forEach {
             addEventHandler(it)
             root.children.add(it.background)
             root.children.add(it.image)
         }
-
         addButtons(root, mainStage)
 
-        /*-------------------------------------
-        val alert = Alert(AlertType.INFORMATION)
-        alert.title = "End of the game!"
-        alert.headerText = null
-        alert.contentText = "Congrats!\n" + (if (turnColor == PieceColor.BLACK) "WHITE" else "BLACK") + " is the winner!"
-        alert.setOnHidden { alert.close() }
-        alert.show()
-        val options = FXCollections.observableArrayList(
-            "Option 1",
-            "Option 2",
-            "Option 3"
-        )
-        val comboBox = ComboBox(options);
-        comboBox.translateX = 750.0
-        //root.children.add(comboBox)
-        //-------------------------------------*/
-
-        // Main loop
         object : AnimationTimer() {
             override fun handle(currentNanoTime: Long) {
                 tickAndRender(currentNanoTime)
             }
         }.start()
-
         mainStage.show()
-    }
-
-    private fun iterateTiles(func: (t: Tile) -> Unit) {
-        for (y in 0 until 8) {
-            for (x in 0 until 8) {
-                func(tiles[y][x])
-            }
-        }
     }
 
     private fun addButtons(root: Group, mainStage: Stage) {
@@ -110,19 +81,19 @@ class Game : Application() {
         saveButton.translateX = 725.0
         saveButton.translateY = 30.0
         saveButton.addEventHandler(MouseEvent.MOUSE_CLICKED) {
-            //Creating a File chooser
             val fileChooser = FileChooser()
             fileChooser.title = "Save"
+            fileChooser.initialDirectory = File("saves")
             fileChooser.extensionFilters.addAll(FileChooser.ExtensionFilter("All Files", "*.*"))
             val file: File? = fileChooser.showSaveDialog(mainStage)
             if (file != null) {
                 val pw = PrintWriter(file)
                 pw.println(if(turnColor == PieceColor.WHITE) "white" else "black")
-                tiles.forEach { tiles -> tiles.forEach { tile ->
-                    if (tile.piece != null) {
-                        pw.println(tile.toString())
+                tiles.flatten().forEach {
+                    if (it.piece != null) {
+                        pw.println(it.toString())
                     }
-                }}
+                }
                 pw.flush()
             }
         }
@@ -131,9 +102,9 @@ class Game : Application() {
         loadButton.translateX = 725.0
         loadButton.translateY = 60.0
         loadButton.addEventHandler(MouseEvent.MOUSE_CLICKED) {
-            //Creating a File chooser
             val fileChooser = FileChooser()
             fileChooser.title = "Load"
+            fileChooser.initialDirectory = File("saves")
             fileChooser.extensionFilters.addAll(FileChooser.ExtensionFilter("All Files", "*.*"))
             val file: File? = fileChooser.showOpenDialog(mainStage)
             if (file != null) {
@@ -160,6 +131,7 @@ class Game : Application() {
                         "Pawn" -> tiles[y][x].piece = Pawn(c, Position(x, y), Image(getResource("/${input[1].lowercase()}Pawn.png")))
                     }
                 }
+                check = Piece.isCheck(tiles, turnColor)
                 actionHappened = true
             }
         }
@@ -175,7 +147,7 @@ class Game : Application() {
             if (tile.selectedToStep) {
                 step(selectedTile!!, tile, true)
             } else if (!tile.selected) {
-                iterateTiles {
+                tiles.flatten().forEach {
                     it.selected = false
                     it.selectedToStep = false
                 }
@@ -189,10 +161,6 @@ class Game : Application() {
 
     fun step(from: Tile, to: Tile, changeTurn: Boolean) {
         var newPos: Position? = null
-
-        if (changeTurn) {
-            check = false
-        }
 
         for (a in 0 until 8) {
             for (b in 0 until 8) {
@@ -217,9 +185,7 @@ class Game : Application() {
         from.image.fill = null
         if (changeTurn) {
             turnColor = if (turnColor == PieceColor.WHITE) PieceColor.BLACK else PieceColor.WHITE
-            if (Piece.isCheck(tiles, turnColor)) {
-                check = true
-            }
+            check = Piece.isCheck(tiles, turnColor)
         }
     }
 
@@ -232,12 +198,9 @@ class Game : Application() {
     }
 
     private fun tickAndRender(currentNanoTime: Long) {
-        // the time elapsed since the last frame, in nanoseconds
-        // can be used for physics calculation, etc
         val elapsedNanos = currentNanoTime - lastFrameTime
         lastFrameTime = currentNanoTime
 
-        // clear canvas
         gc.clearRect(0.0, 0.0, WIDTH.toDouble(), HEIGHT.toDouble())
         displayFPS(elapsedNanos)
 
@@ -248,17 +211,12 @@ class Game : Application() {
     }
 
     private fun updateBoard() {
-        gc.fill = Color.BLACK
         val pm: MutableList<Position> = mutableListOf()
         val allPm: MutableList<Position> = mutableListOf()
         for (y in 0 until 8) {
             for (x in 0 until 8) {
                 val tile = tiles[x][y]
-                if ((x + 1) % 2 == 1 && y % 2 == 1 || x % 2 == 1 && (y + 1) % 2 == 1) {
-                    tile.background.fill = Color.GRAY
-                } else {
-                    tile.background.fill = Color.LIGHTGRAY
-                }
+                tile.background.fill = (if ((x + 1) % 2 == 1 && y % 2 == 1 || x % 2 == 1 && (y + 1) % 2 == 1) Color.GRAY else Color.LIGHTGRAY)
                 if (tile.piece?.color == turnColor) {
                     if (tile.selected) {
                         tile.background.fill = Color.GREEN
@@ -307,17 +265,28 @@ class Game : Application() {
     }
 
     private fun clearTiles() {
-        iterateTiles {
+        tiles.flatten().forEach {
             it.piece = null
             it.image.fill = null
+            it.selected = false
+            it.selectedToStep = false
+            it.background.width = size
+            it.background.height = size
+            it.image.width = size
+            it.image.height = size
         }
     }
 
     private fun createStarterSetup() {
         endOfGame = false
+        check = false
         actionHappened = true
         turnColor = PieceColor.WHITE
         clearTiles()
+        setStarterTilePieces()
+    }
+
+    private fun setStarterTilePieces() {
         tiles[0][7].piece = Rook(PieceColor.BLACK, Position(7, 0), Image(getResource("/blackRook.png")))
         tiles[0][0].piece = Rook(PieceColor.BLACK, Position(0, 0), Image(getResource("/blackRook.png")))
         tiles[7][0].piece = Rook(PieceColor.WHITE, Position(0, 7), Image(getResource("/whiteRook.png")))
@@ -337,13 +306,6 @@ class Game : Application() {
         for (i in 0..7) {
             tiles[1][i].piece = Pawn(PieceColor.BLACK, Position(i, 1), Image(getResource("/blackPawn.png")))
             tiles[6][i].piece = Pawn(PieceColor.WHITE, Position(i, 6), Image(getResource("/whitePawn.png")))
-        }
-
-        iterateTiles {
-            it.background.width = size
-            it.background.height = size
-            it.image.width = size
-            it.image.height = size
         }
     }
 
