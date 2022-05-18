@@ -135,10 +135,11 @@ class Game : Application() {
                 actionHappened = true
             }
         }
-
-        root.children.add(restartButton)
-        root.children.add(saveButton)
-        root.children.add(loadButton)
+        root.children.apply {
+            add(restartButton)
+            add(saveButton)
+            add(loadButton)
+        }
     }
 
     private fun addEventHandler(tile: Tile) {
@@ -232,9 +233,11 @@ class Game : Application() {
                 }
 
                 if (tile.piece != null) {
-                    tile.image.x = size * y
-                    tile.image.y = size * x
-                    tile.image.fill = ImagePattern(tile.piece!!.image)
+                    tile.apply {
+                        image.x = size * y
+                        image.y = size * x
+                        image.fill = ImagePattern(tile.piece!!.image)
+                    }
                 }
             }
         }
@@ -255,25 +258,29 @@ class Game : Application() {
 
     private fun endGame() {
         endOfGame = true
-        val alert = Alert(AlertType.INFORMATION)
-        alert.title = "End of the game!"
-        alert.headerText = null
-        alert.contentText = (if (check) "Congrats!\n" + (if (turnColor == PieceColor.BLACK) "WHITE" else "BLACK") + " is the winner!" else "Stalemate!")
+       Alert(AlertType.INFORMATION).apply {
+           title = "End of the game!"
+           headerText = null
+           contentText = (if (check) "Congrats!\n" + (if (turnColor == PieceColor.BLACK) "WHITE" else "BLACK") + " is the winner!" else "Stalemate!")
+           setOnHidden { close() }
+           show()
+       }
+
         check = false
-        alert.setOnHidden { alert.close() }
-        alert.show()
     }
 
     private fun clearTiles() {
         tiles.flatten().forEach {
-            it.piece = null
-            it.image.fill = null
-            it.selected = false
-            it.selectedToStep = false
-            it.background.width = size
-            it.background.height = size
-            it.image.width = size
-            it.image.height = size
+            it.apply {
+                piece = null
+                image.fill = null
+                selected = false
+                selectedToStep = false
+                background.width = size
+                background.height = size
+                image.width = size
+                image.height = size
+            }
         }
     }
 
