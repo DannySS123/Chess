@@ -25,9 +25,9 @@ import java.io.PrintWriter
 class Game : Application() {
 
     companion object {
-        private const val WIDTH = 800
+        private const val WIDTH = 1000
         private const val HEIGHT = 720
-        private const val size: Double = (WIDTH.toDouble() - 80) / 8
+        private const val size: Double = (WIDTH.toDouble() - 280) / 8
     }
 
     private lateinit var mainScene: Scene
@@ -204,6 +204,9 @@ class Game : Application() {
 
         gc.clearRect(0.0, 0.0, WIDTH.toDouble(), HEIGHT.toDouble())
         displayFPS(elapsedNanos)
+
+        gc.drawImage(Image(getResource("/vidra.png")), 730.0,200.0, 709.0/2.7,945.0/2.7)
+        gc.fillText("Zh-ra elfelejtettem rárajzolni, de itt van :D", 730.0, 580.0)
 
         if (actionHappened) {
             actionHappened = false
