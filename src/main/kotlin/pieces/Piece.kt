@@ -34,23 +34,23 @@ abstract class Piece(val name: String, val color: PieceColor, var position: Posi
             }
         }
 
-        fun bishopStepPos(a: Int): Pair<Pair<Int, Int>, Pair<Int, Int>> {
+        fun bishopStepPos(a: Int): Direction {
             return when (a) {
-                -2 -> Pair(Pair(1,1), Pair(1,1))
-                -1 -> Pair(Pair(-1,-1), Pair(-1,-1))
-                0 -> Pair(Pair(1,-1), Pair(1,-1))
-                1 -> Pair(Pair(-1,1), Pair(-1,1))
-                else -> Pair(Pair(0,0), Pair(0,0))
+                -2 -> Direction(1,1,1,1)
+                -1 -> Direction(-1,-1,-1,-1)
+                0 -> Direction(1,-1,1,-1)
+                1 -> Direction(-1,1,-1,1)
+                else -> Direction(0,0,0,0)
             }
         }
 
-        fun rookStepPos(a: Int): Pair<Pair<Int, Int>, Pair<Int, Int>> {
+        fun rookStepPos(a: Int): Direction {
             return when (a) {
-                -2 -> Pair(Pair(1,0), Pair(1,0))
-                -1 -> Pair(Pair(-1, 0), Pair(-1,0))
-                0 -> Pair(Pair(0,-1), Pair(0,-1))
-                1 -> Pair(Pair(0,1), Pair(0,1))
-                else -> Pair(Pair(0,0), Pair(0,0))
+                -2 -> Direction(1,0,1,0)
+                -1 -> Direction(-1,0,-1,0)
+                0 -> Direction(0,-1,0,-1)
+                1 -> Direction(0,1,0,1)
+                else -> Direction(0,0,0,0)
             }
         }
 
@@ -83,11 +83,9 @@ abstract class Piece(val name: String, val color: PieceColor, var position: Posi
             val cX: Int = king.position.x
             val cY: Int = king.position.y
             for (a in 0..7) {
-                val pair = knightStepPos(a)
-                val i = pair.first
-                val j = pair.second
-                if (isInBoard(cX + i, cY + j)) {
-                    val piece: Piece? = tiles[cY + j][cX + i].piece
+                val xy = knightStepPos(a)
+                if (isInBoard(cX + xy.first, cY + xy.second)) {
+                    val piece: Piece? = tiles[cY + xy.second][cX + xy.first].piece
                     if (piece != null && king.color != piece.color && piece is Knight) {
                         return true
                     }
@@ -95,28 +93,22 @@ abstract class Piece(val name: String, val color: PieceColor, var position: Posi
             }
             for (a in -2..1) {
                 val dir = rookStepPos(a)
-                var i = dir.first.first
-                var j = dir.first.second
-                while (isInBoard(cX + i, cY + j)) {
-                    val piece: Piece? = tiles[cY + j][cX + i].piece
+                while (isInBoard(cX + dir.x, cY + dir.y)) {
+                    val piece: Piece? = tiles[cY + dir.y][cX + dir.x].piece
                     if (piece != null) {
                         if (king.color != piece.color && (piece is Queen || piece is Rook)) return true else break
                     }
-                    i += dir.second.first
-                    j += dir.second.second
+                    dir.step()
                 }
             }
             for (a in -2..1) {
                 val dir = bishopStepPos(a)
-                var i = dir.first.first
-                var j = dir.first.second
-                while (isInBoard(cX + i, cY + j)) {
-                    val piece: Piece? = tiles[cY + j][cX + i].piece
+                while (isInBoard(cX + dir.x, cY + dir.y)) {
+                    val piece: Piece? = tiles[cY + dir.y][cX + dir.x].piece
                     if (piece != null) {
                         if (king.color != piece.color && (piece is Queen || piece is Bishop)) return true else break
                     }
-                    i += dir.second.first
-                    j += dir.second.second
+                    dir.step()
                 }
             }
             val m = if (king.color == PieceColor.WHITE) -1 else 1

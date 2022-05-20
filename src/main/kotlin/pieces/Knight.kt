@@ -10,12 +10,10 @@ class Knight(color: PieceColor, position: Position, image: Image) : Piece("Knigh
         val cY: Int = position.y
 
         for (a in 0..7) {
-            val pair = knightStepPos(a)
-            val i = pair.first
-            val j = pair.second
-            if (isInBoard(cX + i, cY + j) && !isThereSame(tiles[cY + j][cX + i]) &&
-                isGoodStep(tiles[cY][cX], tiles[cY + j][cX + i], tiles, turnColor)) {
-                    p.add(Position(cX + i, cY + j))
+            val xy = knightStepPos(a)
+            if (isInBoard(cX + xy.first, cY + xy.second) && !isThereSame(tiles[cY + xy.second][cX + xy.first]) &&
+                isGoodStep(tiles[cY][cX], tiles[cY + xy.second][cX + xy.first], tiles, turnColor)) {
+                    p.add(Position(cX + xy.first, cY + xy.second))
             }
         }
         return p

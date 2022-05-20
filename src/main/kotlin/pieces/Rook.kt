@@ -11,16 +11,13 @@ class Rook(color: PieceColor, position: Position, image: Image) : Piece("Rook", 
 
         for (a in -2..1) {
             val dir = rookStepPos(a)
-            var i = dir.first.first
-            var j = dir.first.second
-            while (isInBoard(cX + i, cY + j) && !isThereSame(tiles[cY + j][cX + i])) {
-                val toTile: Tile = tiles[cY + j][cX + i]
+            while (isInBoard(cX + dir.x, cY + dir.y) && !isThereSame(tiles[cY + dir.y][cX + dir.x])) {
+                val toTile: Tile = tiles[cY + dir.y][cX + dir.x]
                 if (isGoodStep(tiles[cY][cX], toTile, tiles, turnColor)) {
-                    p.add(Position(cX + i, cY + j))
+                    p.add(Position(cX + dir.x, cY + dir.y))
                 }
                 if (toTile.piece != null) break
-                i += dir.second.first
-                j += dir.second.second
+                dir.step()
             }
         }
         return p
